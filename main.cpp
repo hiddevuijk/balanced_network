@@ -1,9 +1,9 @@
+// Eigenheaders
+#include "Eigen/Dense"
+
 // nr_headers (nr_headers/)
 #include "nr_headers/nr3.h"
 #include "nr_headers/ran.h"
-
-// Eigenheaders
-#include </usr/local/Cellar/eigen/3.2.4/include/eigen3/Eigen/Dense>
 
 // std headers
 #include <iostream>
@@ -18,9 +18,8 @@
 #include "headers/write_matrix.h"
 
 using namespace::std;
-using namespece::Eigen;
+using namespace::Eigen;
 
-typedef std::vector<std::vector<int> > Matint;
 int main()
 {
 	time_t tstart = time(NULL);
@@ -62,12 +61,10 @@ int main()
 	time_t t1,t2;
 	t1 = time(NULL);
 
-	Matint EE = connectivity_matrix(Ne,Ne,K,r);
-	Matint EI = connectivity_matrix(Ne,Ni,K,r);
-	Matint IE = connectivity_matrix(Ni,Ne,K,r);
-	Matint II = connectivity_matrix(Ni,Ni,K,r);
-//	Matint EO = connectivity_matrix(Ne,No,K,r);
-//	Matint IO = connectivity_matrix(Ni,No,K,r);
+	vector<VectorXi> EE = connectivity_matrix(Ne,Ne,K,r);
+	vector<VectorXi> EI = connectivity_matrix(Ne,Ni,K,r);
+	vector<VectorXi> IE = connectivity_matrix(Ni,Ne,K,r);
+	vector<VectorXi> II = connectivity_matrix(Ni,Ni,K,r);
 
 	t2 = time(NULL);
 	log << "generating connectivity matrices took: " << difftime(t2,t1) << " sec" << endl;	
@@ -79,12 +76,10 @@ int main()
 	for(int i=0;i<Ni;i++) thi[i] = (theta_i + r.doub()*D)*sqK;
 
 
-	vector<int> nwe(Ne,0);
-	vector<int> nwi(Ni,0);
-	vector<int> nwo(No,0);
-	for(int i=0;i<Ne;i++) if(me0>r.doub()) nwe[i] = 1;
+	VectorXi nwe(Ne);
+	VectorXi nwi(Ni);
 	for(int i=0;i<Ni;i++) if(mi0>r.doub()) nwi[i] = 1;
-	for(int i=0;i<No;i++) if(mo>r.doub()) nwo[i] = 1;
+	for(int i=0;i<No;i++) if(me0>r.doub()) nwe[i] = 1;
 
 	vector<double> nwe_activity(tmax,0.0);
 	vector<double> nwi_activity(tmax,0.0);
@@ -105,8 +100,8 @@ int main()
 
 		//update exitatory population
 		ie = r.int64() % (Ne-1);
-		currentEE = Jee*dotproduct(EE[ie],nwe,Ne);
-		currentEI = Jei*dotproduct(EI[ie],nwi,Ni);
+		currentEE = Jee*EE[ie].dot(nwe);
+		currentEI = Jei*EI[ie].dot(nwi);
 		currentEO = Jeo*mo*K;
 		current = currentEE+currentEO+currentEI;
 		if(current>the[ie]){
@@ -131,8 +126,8 @@ int main()
 		
 		// update inhibitory population
 		ii = r.int64() % (Ni-1);
-		currentIE = Jie*dotproduct(IE[ii],nwe,Ne);
-		currentII = Jii*dotproduct(II[ii],nwi,Ni);
+		currentIE = Jie*EI[ii].dot(nwe);
+		currentII = Jii*II[ii].dot(nwi);
 		currentIO = Jio*mo*K;
 		current = currentIE+currentII+currentIO;
 		if(current>thi[ii]){
@@ -157,8 +152,8 @@ int main()
 		// extra inhibitory update
 		if( (1/tau - 1)> r.doub()) {
 			ii = r.int64() % (Ni-1);
-			currentIE = Jie*dotproduct(IE[ii],nwe,Ne);
-			currentII = Jii*dotproduct(II[ii],nwi,Ni);
+			currentIE = Jie*IE[ii].dot(nwe);
+			currentII = Jii*II[ii].dot(nwi);
 			currentIO = Jio*mo*K;
 			current = currentIE+currentII+currentIO;
 			if(current>thi[ii]){
@@ -183,8 +178,8 @@ int main()
 
 
 		// calculate inode currents
-		currentEE = Jee*dotproduct(EE[inode],nwe,Ne);
-		currentEI = Jei*dotproduct(EI[inode],nwi,Ni);
+		currentEE = Jee*EE[inode].dot(nwe);
+		currentEI = Jei*EI[inode].dot(nwi);
 		currentEO = Jeo*mo*K;
 		current = currentEE+currentEO+currentEI;
 		node_e_in[t] = currentEE+currentEO;
@@ -205,8 +200,6 @@ int main()
 //	write_matrix(EI,Ne,Ni,"EI.csv");
 //	write_matrix(IE,Ni,Ne,"IE.csv");
 //	write_matrix(II,Ni,Ni,"II.csv");
-//	write_matrix(EO,Ne,No,"EO.csv");
-//	write_matrix(IO,Ni,No,"IO.csv");
 	write_matrix(the,Ne,"the.csv");
 	write_matrix(thi,Ni,"thi.csv");
 
