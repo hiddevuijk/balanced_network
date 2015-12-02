@@ -127,6 +127,8 @@ int main()
 		// update inhibitory population
 		ii = r.int64() % (Ni-1);
 		currentIE = Jie*EI[ii].dot(nwe);
+		if(t==1000) cout << currentIE << endl;
+
 		currentII = Jii*II[ii].dot(nwi);
 		currentIO = Jio*mo*K;
 		current = currentIE+currentII+currentIO;

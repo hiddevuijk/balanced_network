@@ -1,7 +1,3 @@
 
-generating connectivity matrices took: 0 sec
-simulation took: 13 sec
-writing matrices took: 3 sec
-
-total time: 17 sec
-
+generating connectivity matrices took: 1 sec
+simulation took: 12 sec
