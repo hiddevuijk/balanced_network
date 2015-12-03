@@ -1,9 +1,7 @@
-// Eigenheaders
-#include "Eigen/Dense"
-
 // nr_headers (nr_headers/)
 #include "nr_headers/nr3.h"
 #include "nr_headers/ran.h"
+
 
 // std headers
 #include <iostream>
@@ -18,42 +16,48 @@
 #include "headers/write_matrix.h"
 
 using namespace::std;
-using namespace::Eigen;
 
-int main()
+typedef std::vector<std::vector<int> > Matint;
+int main(int argc,char *argv[])
 {
+	int seed;
+	if(argc == 1) {
+		seed = 123456789;
+	} else if(argc ==2) {
+		seed = stoi(argv[1]);
+	} else cerr << argv[0] << " does not know what to do with input";
+
 	time_t tstart = time(NULL);
 
 	int inode = 0;
 	ofstream inode_out("inode.txt");
 	inode_out << inode;
 
-	int N = 5000;
+	int N = 10000;
 	int Ne = N;
 	int Ni = N;
 	int No = N;
 
-	int K = 500;
+	int K = 1000;
 
 	double Jeo = 1.0;
 	double Jee = 1.0;
 	double Jie = 1.0;
 	double Jio = 0.8;
-	double Jei = -2.5;
+	double Jei = -2.0;
 	double Jii = -1.8;
 
 	double theta_e = 1.0;
 	double theta_i = 0.8;
-	double D = 0.;
+	double D = 0.3;
 	double mo = 0.08;
 	double tau = .9;
 
 	double me0 = 0;
 	double mi0 = 0;
 
-	int tmax = 200*N;
+	int tmax = 100*N;
 
-	int seed = 123456789;
 	Ranq1 r(seed);
 
 	ofstream log("log.txt");
@@ -61,10 +65,12 @@ int main()
 	time_t t1,t2;
 	t1 = time(NULL);
 
-	vector<VectorXi> EE = connectivity_matrix(Ne,Ne,K,r);
-	vector<VectorXi> EI = connectivity_matrix(Ne,Ni,K,r);
-	vector<VectorXi> IE = connectivity_matrix(Ni,Ne,K,r);
-	vector<VectorXi> II = connectivity_matrix(Ni,Ni,K,r);
+	Matint EE = connectivity_matrix(Ne,Ne,K,r);
+	Matint EI = connectivity_matrix(Ne,Ni,K,r);
+	Matint IE = connectivity_matrix(Ni,Ne,K,r);
+	Matint II = connectivity_matrix(Ni,Ni,K,r);
+	Matint EO = connectivity_matrix(Ne,No,K,r);
+	Matint IO = connectivity_matrix(Ni,No,K,r);
 
 	t2 = time(NULL);
 	log << "generating connectivity matrices took: " << difftime(t2,t1) << " sec" << endl;	
@@ -76,10 +82,12 @@ int main()
 	for(int i=0;i<Ni;i++) thi[i] = (theta_i + r.doub()*D)*sqK;
 
 
-	VectorXi nwe(Ne);
-	VectorXi nwi(Ni);
+	vector<int> nwe(Ne,0);
+	vector<int> nwi(Ni,0);
+	vector<int> nwo(No,0);
+	for(int i=0;i<Ne;i++) if(me0>r.doub()) nwe[i] = 1;
 	for(int i=0;i<Ni;i++) if(mi0>r.doub()) nwi[i] = 1;
-	for(int i=0;i<No;i++) if(me0>r.doub()) nwe[i] = 1;
+	for(int i=0;i<No;i++) if(mo>r.doub()) nwo[i] = 1;
 
 	vector<double> nwe_activity(tmax,0.0);
 	vector<double> nwi_activity(tmax,0.0);
@@ -100,9 +108,10 @@ int main()
 
 		//update exitatory population
 		ie = r.int64() % (Ne-1);
-		currentEE = Jee*EE[ie].dot(nwe);
-		currentEI = Jei*EI[ie].dot(nwi);
-		currentEO = Jeo*mo*K;
+		currentEE = Jee*dotproduct(EE[ie],nwe,Ne);
+		currentEI = Jei*dotproduct(EI[ie],nwi,Ni);
+//		currentEO = Jeo*mo*K;
+		currentEO = Jeo*dotproduct(EO[ie],nwo,No);
 		current = currentEE+currentEO+currentEI;
 		if(current>the[ie]){
 			nwe_ie = 1;
@@ -126,11 +135,10 @@ int main()
 		
 		// update inhibitory population
 		ii = r.int64() % (Ni-1);
-		currentIE = Jie*EI[ii].dot(nwe);
-		if(t==1000) cout << currentIE << endl;
-
-		currentII = Jii*II[ii].dot(nwi);
-		currentIO = Jio*mo*K;
+		currentIE = Jie*dotproduct(IE[ii],nwe,Ne);
+		currentII = Jii*dotproduct(II[ii],nwi,Ni);
+//		currentIO = Jio*mo*K;
+		currentIO = Jio*dotproduct(IO[ii],nwo,No);
 		current = currentIE+currentII+currentIO;
 		if(current>thi[ii]){
 			nwi_ii = 1;
@@ -154,9 +162,10 @@ int main()
 		// extra inhibitory update
 		if( (1/tau - 1)> r.doub()) {
 			ii = r.int64() % (Ni-1);
-			currentIE = Jie*IE[ii].dot(nwe);
-			currentII = Jii*II[ii].dot(nwi);
-			currentIO = Jio*mo*K;
+			currentIE = Jie*dotproduct(IE[ii],nwe,Ne);
+			currentII = Jii*dotproduct(II[ii],nwi,Ni);
+//			currentIO = Jio*mo*K;
+			currentIO = Jio*dotproduct(IO[ii],nwi,No);
 			current = currentIE+currentII+currentIO;
 			if(current>thi[ii]){
 				nwi_ii = 1;
@@ -180,9 +189,10 @@ int main()
 
 
 		// calculate inode currents
-		currentEE = Jee*EE[inode].dot(nwe);
-		currentEI = Jei*EI[inode].dot(nwi);
-		currentEO = Jeo*mo*K;
+		currentEE = Jee*dotproduct(EE[inode],nwe,Ne);
+		currentEI = Jei*dotproduct(EI[inode],nwi,Ni);
+//		currentEO = Jeo*mo*K;
+		currentEO = Jeo*dotproduct(EO[inode],nwo,No);
 		current = currentEE+currentEO+currentEI;
 		node_e_in[t] = currentEE+currentEO;
 		node_i_in[t] = currentEI;
@@ -202,6 +212,8 @@ int main()
 //	write_matrix(EI,Ne,Ni,"EI.csv");
 //	write_matrix(IE,Ni,Ne,"IE.csv");
 //	write_matrix(II,Ni,Ni,"II.csv");
+//	write_matrix(EO,Ne,No,"EO.csv");
+//	write_matrix(IO,Ni,No,"IO.csv");
 	write_matrix(the,Ne,"the.csv");
 	write_matrix(thi,Ni,"thi.csv");
 
