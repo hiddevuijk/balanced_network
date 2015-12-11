@@ -10,9 +10,10 @@ mmo = np.genfromtxt("mmo.csv",delimiter=';')
 
 
 plt.plot(mo,me,color='blue')
-plt.plot(mo,mi,color='red')
-plt.plot(mmo,mme,color='blue',linestyle='--')
+plt.plot(mo,mi,color='blue',linestyle='--')
+plt.plot(mmo,mme,color='red')
 plt.plot(mmo,mmi,color='red',linestyle='--')
+
 plt.show()
 
 

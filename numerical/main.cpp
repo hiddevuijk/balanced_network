@@ -55,6 +55,8 @@ struct Funcvec0 {
 
 int main()
 {
+
+
 	double jeo = 1.0;
 	double jee = 1.0;
 	double jie = 1.0;
@@ -84,7 +86,6 @@ int main()
 		x[1] = 1.5*m[i];
 		broydn(x,check,funcv);
 		f = funcv(x);
-		if(check) cout << " shit's fucked up at i="<<i << endl;
 	
 		me[i] = x[0];
 		mi[i] = x[1];
@@ -104,7 +105,7 @@ int main()
 		xx[0] = 1.5*mm[i];
 		xx[1] = xx[0];
 		broydn(xx,check,funcv0);
-		if(check) cout << " error at i= " << i << endl;
+		if(check) cerr << " error at i= " << i << endl;
 		mme[i] = xx[0];
 		mmi[i] = xx[1];
 	}

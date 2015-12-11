@@ -27,7 +27,6 @@ int main(int argc,char *argv[])
 		seed = stoi(argv[1]);
 	} else cerr << argv[0] << " does not know what to do with input";
 
-	time_t tstart = time(NULL);
 
 	int inode = 0;
 	ofstream inode_out("inode.txt");
@@ -41,8 +40,8 @@ int main(int argc,char *argv[])
 	int K = 1000;
 
 	double Jeo = 1.0;
-	double Jee = 1.0;
-	double Jie = 1.0;
+	double Jee = 2.0;
+	double Jie = 2.0;
 	double Jio = 0.8;
 	double Jei = -2.0;
 	double Jii = -1.8;
@@ -198,10 +197,7 @@ int main(int argc,char *argv[])
 		node_i_in[t] = currentEI;
 	}
 
-	t2 = time(NULL);
-	log<< "simulation took: " << difftime(t2,t1) << " sec" << endl;
 
-	t1 = time(NULL);
 	write_matrix(nwe_activity,tmax,"Eactivity.csv");
 	write_matrix(nwi_activity,tmax,"Iactivity.csv");
 	write_matrix(node_e_in,tmax,"Ein.csv");
@@ -217,9 +213,6 @@ int main(int argc,char *argv[])
 	write_matrix(the,Ne,"the.csv");
 	write_matrix(thi,Ni,"thi.csv");
 
-	log << "writing matrices took: " << difftime(time(NULL),t1) << " sec" << endl;
-	log << endl << "total time: " << difftime(time(NULL),tstart) << " sec" << endl;
-	log << endl;
 	return 0;
 }
 
