@@ -70,7 +70,9 @@ int main(int argc,char *argv[])
 	ST.nwe = vector<int> (NW.Ne,0);
 	ST.nwi = vector<int> (NW.Ni,0);
 	ST.nwo = vector<int> (NW.No,0);
-
+	for(int i=0;i<NW.No;++i){
+		if(r.doub()<mo) ST.nwo[i]=1;
+	}
 	ST.node_spike = vector<int> (tmax,0);
 	ST.nwe_activity = vector<double> (tmax,0.0);
 	ST.nwi_activity = vector<double> (tmax,0.0);
