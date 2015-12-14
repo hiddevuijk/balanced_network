@@ -16,6 +16,7 @@
 #include "headers/advance_network.h"
 #include "headers/generate_matrix.h"
 #include "headers/write_matrix.h"
+#include "headers/read_input.h"
 
 using namespace::std;
 
@@ -29,35 +30,23 @@ int main(int argc,char *argv[])
 	} else cerr << argv[0] << " does not know what to do with input";
 
 
-	int inode = 0;
-	ofstream inode_out("inode.txt");
-	inode_out << inode;
 
-	int N = 1000;
-	int K = 10;
-	double theta_e = 1.0;
-	double theta_i = 0.8;
-	double D = 0.3;
-	double mo = 0.08;
+	int N,K,tt;
+	double theta_e,theta_i,D,mo;
+	Network NW;
+	read_input(NW,N,K,theta_e,theta_i,D,mo,tt,"input.txt");
 
-	int tmax = 10*N;
+	cout << NW.Jeo << endl << D  << endl << N << endl << K << endl;
+	return 0;
+	int tmax = 	tt*N;
 	int t_to_stable = 10*N;
 
 	Ranq1 r(seed);
 	// setup network
-	Network NW;
 	NW.Ne = N;
 	NW.Ni = N;
 	NW.No = N;
 
-	NW.Jeo = 1.0;
-	NW.Jee = 2.0;
-	NW.Jie = 2.0;
-	NW.Jio = 0.8;
-	NW.Jei = -2.0;
-	NW.Jii = -1.8;
-
-	NW.tau = .9;
 
 	NW.EE = connectivity_matrix(NW.Ne,NW.Ne,K,r);
 	NW.EI = connectivity_matrix(NW.Ne,NW.Ni,K,r);
@@ -72,6 +61,7 @@ int main(int argc,char *argv[])
 	for(int i=0;i<NW.Ne;i++) NW.the[i] = (theta_e + r.doub()*D)*sqK;
 	for(int i=0;i<NW.Ni;i++) NW.thi[i] = (theta_i + r.doub()*D)*sqK;
 
+	int inode =0;
 
 	// set up starting state of the network
 	State ST;
@@ -84,6 +74,8 @@ int main(int argc,char *argv[])
 	ST.nwi_activity = vector<double> (tmax,0.0);
 
 	ST.inode = 0;
+
+
 
 	vector<double> node_e_in(tmax,0.0);
 	vector<double> node_i_in(tmax,0.0);
