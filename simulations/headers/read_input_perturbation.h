@@ -12,7 +12,7 @@ std::string remove_text(std::string str)
 	return str.substr(pos+1);
 }
 
-void read_input(Network& NW,int& N, int& K, double& theta_e, double& theta_i, double& D, double& mo, int& tt,int& seed, std::string infile_name)
+void read_input(Network& NW,int& N, int& K, double& theta_e, double& theta_i, double& D, double& mo,double& mf, int& ti, int& tf,int & tt, int& seed, std::string infile_name)
 {
 	ifstream input(infile_name);
 	std::string temp;
@@ -71,11 +71,24 @@ void read_input(Network& NW,int& N, int& K, double& theta_e, double& theta_i, do
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
+	mf = std::stod(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	ti = std::stoi(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
+	tf = std::stoi(temp);
+
+	std::getline(input,temp);
+	temp = remove_text(temp);
 	tt = std::stoi(temp);
 
 	std::getline(input,temp);
 	temp = remove_text(temp);
-	seed = std::stoi(temp);	
+	seed = std::stoi(temp);
+	
 
 }
 

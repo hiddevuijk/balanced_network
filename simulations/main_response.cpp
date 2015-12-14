@@ -16,16 +16,21 @@
 #include "headers/advance_network.h"
 #include "headers/generate_matrix.h"
 #include "headers/write_matrix.h"
-#include "headers/read_input.h"
+#include "headers/read_input_perturbation.h"
 
 using namespace::std;
 
 int main(int argc,char *argv[])
 {
 	int N,K,tt,seed;
-	double theta_e,theta_i,D,mo;
+	double theta_e,theta_i,D,mo,mf;
 	Network NW;
-	read_input(NW,N,K,theta_e,theta_i,D,mo,tt,seed,"input.txt");
+	
+	int ti,tf;
+	read_input(NW,N,K,theta_e,theta_i,D,mo,mf,ti,tf,tt,seed,"input.txt");
+	double a = mf-mo;
+	ti = ti*N;
+	tf = tf*N;
 
 	// if seed is input from command line use that:
 	if(argc == 1) {
@@ -71,11 +76,9 @@ int main(int argc,char *argv[])
 	ST.nwi_activity = vector<double> (tmax,0.0);
 
 	ST.inode = 0;
-
-	vector<double> node_e_in(tmax,0.0);
-	vector<double> node_i_in(tmax,0.0);
 	
-
+	bool node_1 = true;
+	int i;
 	// start simulation
 
 	//advance until t_to_stable
@@ -90,13 +93,22 @@ int main(int argc,char *argv[])
 	// evolve and save values
 	for(int t=1;t<tmax;t++) {
 
+	
 		// advance network 1 time step
 		advanceNW(NW,ST,t,r);	
-
-		// calculate inode currents
-		node_e_in[t] = NW.Jee*dotproduct(NW.EE[ST.inode],ST.nwe,NW.Ne);
-		node_e_in[t] +=  NW.Jeo*dotproduct(NW.EO[ST.inode],ST.nwo,NW.No);
-		node_i_in[t] = NW.Jei*dotproduct(NW.EI[ST.inode],ST.nwi,NW.Ni);
+		
+		if(t>ti && t<tf && r.doub()<a) {
+			int i;
+			do{
+				i = r.int64() % (NW.No-1);
+				if(ST.nwo[i] == 1) {
+					node_1 = true;
+				} else {
+					node_1 = false;
+				}
+			} while(node_1);
+			ST.nwo[i] =1;
+		}
 	}
 
 
@@ -104,11 +116,6 @@ int main(int argc,char *argv[])
 	// write results
 	write_matrix(ST.nwe_activity,tmax,"Eactivity.csv");
 	write_matrix(ST.nwi_activity,tmax,"Iactivity.csv");
-	write_matrix(node_e_in,tmax,"Ein.csv");
-	write_matrix(node_i_in,tmax,"Iin.csv");
-	write_matrix(ST.node_spike,tmax,"spike.csv");
-	write_matrix(NW.the,NW.Ne,"the.csv");
-	write_matrix(NW.thi,NW.Ni,"thi.csv");
 
 	return 0;
 }
