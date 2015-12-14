@@ -12,12 +12,13 @@
 #include <time.h>
 
 //other headers (headers/)
+#include "headers/network_struct.h"
+#include "headers/advance_network.h"
 #include "headers/generate_matrix.h"
 #include "headers/write_matrix.h"
 
 using namespace::std;
 
-typedef std::vector<std::vector<int> > Matint;
 int main(int argc,char *argv[])
 {
 	int seed;
@@ -32,186 +33,92 @@ int main(int argc,char *argv[])
 	ofstream inode_out("inode.txt");
 	inode_out << inode;
 
-	int N = 10000;
-	int Ne = N;
-	int Ni = N;
-	int No = N;
-
-	int K = 1000;
-
-	double Jeo = 1.0;
-	double Jee = 2.0;
-	double Jie = 2.0;
-	double Jio = 0.8;
-	double Jei = -2.0;
-	double Jii = -1.8;
-
+	int N = 1000;
+	int K = 10;
 	double theta_e = 1.0;
 	double theta_i = 0.8;
 	double D = 0.3;
 	double mo = 0.08;
-	double tau = .9;
 
-	double me0 = 0;
-	double mi0 = 0;
-
-	int tmax = 100*N;
+	int tmax = 10*N;
+	int t_to_stable = 10*N;
 
 	Ranq1 r(seed);
+	// setup network
+	Network NW;
+	NW.Ne = N;
+	NW.Ni = N;
+	NW.No = N;
 
-	ofstream log("log.txt");
-	log << endl;
-	time_t t1,t2;
-	t1 = time(NULL);
+	NW.Jeo = 1.0;
+	NW.Jee = 2.0;
+	NW.Jie = 2.0;
+	NW.Jio = 0.8;
+	NW.Jei = -2.0;
+	NW.Jii = -1.8;
 
-	Matint EE = connectivity_matrix(Ne,Ne,K,r);
-	Matint EI = connectivity_matrix(Ne,Ni,K,r);
-	Matint IE = connectivity_matrix(Ni,Ne,K,r);
-	Matint II = connectivity_matrix(Ni,Ni,K,r);
-	Matint EO = connectivity_matrix(Ne,No,K,r);
-	Matint IO = connectivity_matrix(Ni,No,K,r);
+	NW.tau = .9;
 
-	t2 = time(NULL);
-	log << "generating connectivity matrices took: " << difftime(t2,t1) << " sec" << endl;	
+	NW.EE = connectivity_matrix(NW.Ne,NW.Ne,K,r);
+	NW.EI = connectivity_matrix(NW.Ne,NW.Ni,K,r);
+	NW.IE = connectivity_matrix(NW.Ni,NW.Ne,K,r);
+	NW.II = connectivity_matrix(NW.Ni,NW.Ni,K,r);
+	NW.EO = connectivity_matrix(NW.Ne,NW.No,K,r);
+	NW.IO = connectivity_matrix(NW.Ni,NW.No,K,r);
 
-	vector<double> the(Ne,0.0);
-	vector<double> thi(Ni,0.0);
+	NW.the = vector<double> (NW.Ne,0.0);
+	NW.thi = vector<double> (NW.Ni,0.0);
 	double sqK = sqrt((double)K);
-	for(int i=0;i<Ne;i++) the[i] = (theta_e + r.doub()*D)*sqK;
-	for(int i=0;i<Ni;i++) thi[i] = (theta_i + r.doub()*D)*sqK;
+	for(int i=0;i<NW.Ne;i++) NW.the[i] = (theta_e + r.doub()*D)*sqK;
+	for(int i=0;i<NW.Ni;i++) NW.thi[i] = (theta_i + r.doub()*D)*sqK;
 
 
-	vector<int> nwe(Ne,0);
-	vector<int> nwi(Ni,0);
-	vector<int> nwo(No,0);
-	for(int i=0;i<Ne;i++) if(me0>r.doub()) nwe[i] = 1;
-	for(int i=0;i<Ni;i++) if(mi0>r.doub()) nwi[i] = 1;
-	for(int i=0;i<No;i++) if(mo>r.doub()) nwo[i] = 1;
+	// set up starting state of the network
+	State ST;
+	ST.nwe = vector<int> (NW.Ne,0);
+	ST.nwi = vector<int> (NW.Ni,0);
+	ST.nwo = vector<int> (NW.No,0);
 
-	vector<double> nwe_activity(tmax,0.0);
-	vector<double> nwi_activity(tmax,0.0);
+	ST.node_spike = vector<int> (tmax,0);
+	ST.nwe_activity = vector<double> (tmax,0.0);
+	ST.nwi_activity = vector<double> (tmax,0.0);
+
+	ST.inode = 0;
+
 	vector<double> node_e_in(tmax,0.0);
 	vector<double> node_i_in(tmax,0.0);
-	vector<double> node_spike(tmax,0.0);
 	
-	t1 = time(NULL);	
+
+
 	// start simulation
-	int ie, ii, nwe_ie,nwi_ii;
-	double change_nwe, change_nwi;
-	double current,currentEE, currentEI, currentIE,
-		currentII, currentEO, currentIO;
-
-	nwe_activity[0] = average_vec(nwe,Ne);
-	nwi_activity[0] = average_vec(nwi,Ni);
-	for(int t=1;t<tmax;t++) {
-
-		//update exitatory population
-		ie = r.int64() % (Ne-1);
-		currentEE = Jee*dotproduct(EE[ie],nwe,Ne);
-		currentEI = Jei*dotproduct(EI[ie],nwi,Ni);
-//		currentEO = Jeo*mo*K;
-		currentEO = Jeo*dotproduct(EO[ie],nwo,No);
-		current = currentEE+currentEO+currentEI;
-		if(current>the[ie]){
-			nwe_ie = 1;
-			if(nwe[ie] == 1){
-				 change_nwe = 0;
-			} else {
-				change_nwe = 1;
-				nwe[ie] = 1;
-				if(ie == inode) node_spike[t] = 1;
-			}
-		} else{
-			nwe_ie = 0;
-			if(nwe[ie] == 0) {
-				change_nwe = 0;
-			} else {
-				change_nwe = -1;
-				nwe[ie] = 0;
-			}
-		}
-		nwe_activity[t] = nwe_activity[t-1]+change_nwe/Ne;
-		
-		// update inhibitory population
-		ii = r.int64() % (Ni-1);
-		currentIE = Jie*dotproduct(IE[ii],nwe,Ne);
-		currentII = Jii*dotproduct(II[ii],nwi,Ni);
-//		currentIO = Jio*mo*K;
-		currentIO = Jio*dotproduct(IO[ii],nwo,No);
-		current = currentIE+currentII+currentIO;
-		if(current>thi[ii]){
-			nwi_ii = 1;
-			if(nwi[ii] == 1) {
-				change_nwi =0;
-			} else {
-				change_nwi = 1;
-				nwi[ii] = 1;
-			}	
-		} else {
-			nwi_ii = 0;
-			if(nwi[ii] == 0) {
-				change_nwi = 0;
-			} else {
-				change_nwi = -1;
-				nwi[ii] = 0;
-			}
-		}
-		nwi_activity[t] = nwi_activity[t-1]+change_nwi/Ni;
-
-		// extra inhibitory update
-		if( (1/tau - 1)> r.doub()) {
-			ii = r.int64() % (Ni-1);
-			currentIE = Jie*dotproduct(IE[ii],nwe,Ne);
-			currentII = Jii*dotproduct(II[ii],nwi,Ni);
-//			currentIO = Jio*mo*K;
-			currentIO = Jio*dotproduct(IO[ii],nwi,No);
-			current = currentIE+currentII+currentIO;
-			if(current>thi[ii]){
-				nwi_ii = 1;
-				if(nwi[ii] == 1) {
-					change_nwi =0;
-				} else {
-					change_nwi = 1;
-					nwi[ii] = 1;
-				}	
-			} else {
-				nwi_ii = 0;
-				if(nwi[ii] == 0) {
-					change_nwi = 0;
-				} else {
-					change_nwi = -1;
-					nwi[ii] = 0;
-				}
-			}
-			nwi_activity[t] = nwi_activity[t]+change_nwi/Ni;
-		}
-
-
-		// calculate inode currents
-		currentEE = Jee*dotproduct(EE[inode],nwe,Ne);
-		currentEI = Jei*dotproduct(EI[inode],nwi,Ni);
-//		currentEO = Jeo*mo*K;
-		currentEO = Jeo*dotproduct(EO[inode],nwo,No);
-		current = currentEE+currentEO+currentEI;
-		node_e_in[t] = currentEE+currentEO;
-		node_i_in[t] = currentEI;
+	for(int i=0;i<t_to_stable;++i) {
+		advanceNW_stable_state(NW,ST,r);
 	}
 
 
-	write_matrix(nwe_activity,tmax,"Eactivity.csv");
-	write_matrix(nwi_activity,tmax,"Iactivity.csv");
+	ST.nwe_activity[0] = average_vec(ST.nwe,NW.Ne);
+	ST.nwi_activity[0] = average_vec(ST.nwi,NW.Ni);
+
+	for(int t=1;t<tmax;t++) {
+
+		// advance network 1 time step
+		advanceNW(NW,ST,t,r);	
+
+		// calculate inode currents
+		node_e_in[t] = NW.Jee*dotproduct(NW.EE[ST.inode],ST.nwe,NW.Ne);
+		node_e_in[t] +=  NW.Jeo*dotproduct(NW.EO[ST.inode],ST.nwo,NW.No);
+		node_i_in[t] = NW.Jei*dotproduct(NW.EI[ST.inode],ST.nwi,NW.Ni);
+	}
+
+
+	write_matrix(ST.nwe_activity,tmax,"Eactivity.csv");
+	write_matrix(ST.nwi_activity,tmax,"Iactivity.csv");
 	write_matrix(node_e_in,tmax,"Ein.csv");
 	write_matrix(node_i_in,tmax,"Iin.csv");
-	write_matrix(node_spike,tmax,"spike.csv");
+	write_matrix(ST.node_spike,tmax,"spike.csv");
 
-//	write_matrix(EE,Ne,Ne,"EE.csv");
-//	write_matrix(EI,Ne,Ni,"EI.csv");
-//	write_matrix(IE,Ni,Ne,"IE.csv");
-//	write_matrix(II,Ni,Ni,"II.csv");
-//	write_matrix(EO,Ne,No,"EO.csv");
-//	write_matrix(IO,Ni,No,"IO.csv");
-	write_matrix(the,Ne,"the.csv");
-	write_matrix(thi,Ni,"thi.csv");
+	write_matrix(NW.the,NW.Ne,"the.csv");
+	write_matrix(NW.thi,NW.Ni,"thi.csv");
 
 	return 0;
 }
