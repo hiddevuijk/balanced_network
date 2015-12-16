@@ -30,7 +30,7 @@ int main(int argc,char *argv[])
 	double a = mf-mo;
 	ti = ti*N;
 	tf = tf*N;
-
+	
 	// if seed is input from command line use that:
 	if(argc ==2) {
 		seed = stoi(argv[1]);
@@ -88,25 +88,33 @@ int main(int argc,char *argv[])
 	// activities at t=0
 	ST.nwe_activity[0] = average_vec(ST.nwe,NW.Ne);
 	ST.nwi_activity[0] = average_vec(ST.nwi,NW.Ni);
-	cout << ST.nwe_activity[0] << endl;
+
 	// evolve and save values
 	for(int t=1;t<tmax;t++) {
 
 	
 		// advance network 1 time step
 		advanceNW(NW,ST,t,r);	
-		
-		if(t>ti && t<tf && r.doub()<a) {
-			int i;
-			do{
-				i = r.int64() % (NW.No-1);
-				if(ST.nwo[i] == 1) {
-					node_1 = true;
-				} else {
-					node_1 = false;
-				}
-			} while(node_1);
-			ST.nwo[i] =1;
+
+		// modify: add connections in stead of all new
+		if(tf == -1*N && t==ti) {		
+			mo=mf;
+			for(int i=0;i<NW.No;++i){
+				if(r.doub()<mo) ST.nwo[i]=1;
+			}
+		}else {
+			if(t>ti && t<tf && r.doub()<a) {
+				int i;
+				do{
+					i = r.int64() % (NW.No-1);
+					if(ST.nwo[i] == 1) {
+						node_1 = true;
+					} else {
+						node_1 = false;
+					}
+				} while(node_1);
+				ST.nwo[i] =1;
+			}
 		}
 	}
 

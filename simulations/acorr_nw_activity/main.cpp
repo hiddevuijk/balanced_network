@@ -29,17 +29,18 @@ int main(int argc,char *argv[])
 	Network NW;
 	
 	int ti,tf;
-	read_input(NW,N,K,theta_e,theta_i,D,mo,tt,seed,"input.txt");
+	read_input(NW,N,K,theta_e,theta_i,D,mo,tt,seed,"inputh.txt");
 
 	// if seed is input from command line use that:
 	if(argc ==2) {
 		seed = stoi(argv[1]);
 	}
 	string outname;
-	if(argc == 3) {
-		outname = argv[2] + ".csv";
+	if(argc == 2) {
+		outname = argv[1];
+		outname += "h.csv";
 	} else {
-		outname  = "nwe_act_acorr.csv"
+		outname  = "nwe_act_acorr.csv";
 	}
 
 	int tmax = 	tt*N;
