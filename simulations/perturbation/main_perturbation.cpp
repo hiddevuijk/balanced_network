@@ -27,7 +27,7 @@ int main(int argc,char *argv[])
 	
 	int ti,tf;
 	read_input(NW,N,K,theta_e,theta_i,D,mo,mf,ti,tf,tt,seed,"input_perturbation.txt");
-	double a = mf-mo;
+	double a = (mf-mo)/(tf-ti);
 	ti = ti*N;
 	tf = tf*N;
 	
