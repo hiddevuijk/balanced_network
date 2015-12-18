@@ -16,6 +16,7 @@
 #include "headers/generate_matrix.h"
 #include "headers/write_matrix.h"
 #include "headers/read_input_perturbation.h"
+#include "headers/find_empty.h"
 
 using namespace::std;
 
@@ -26,7 +27,7 @@ int main(int argc,char *argv[])
 	Network NW;
 	
 	int ti,tf;
-	read_input(NW,N,K,theta_e,theta_i,D,mo,mf,ti,tf,tt,seed,"input_perturbation.txt");
+	read_input(NW,N,K,theta_e,theta_i,D,mo,mf,ti,tf,tt,seed,"input_perturbationh.txt");
 	double a = (mf-mo)/(tf-ti);
 	ti = ti*N;
 	tf = tf*N;
@@ -98,10 +99,27 @@ int main(int argc,char *argv[])
 
 		// modify: add connections in stead of all new
 		if(tf == -1*N && t==ti) {		
-			mo=mf;
-			for(int i=0;i<NW.No;++i){
-				if(r.doub()<mo) ST.nwo[i]=1;
+//			mo=mf;
+//			for(int i=0;i<NW.No;++i){
+//				if(r.doub()<mo) ST.nwo[i]=1;
+//			}
+			double mdiff = mf-mo;
+			double Ndiff = mdiff*NW.No;
+			int Nadd = (int) Ndiff;
+			int i;
+			bool empty = true;
+			while(Nadd>0 && empty) {
+				--Nadd;
+				find_empty(i,ST.nwo,NW.No,r,empty);
+				if(!empty){
+					cerr << " could not find quiescent neuron to increase mo \n"
+						<< "continued with: " << average_vec(ST.nwo,NW.Ne)
+						<< " in stead of: " << mf << '\n';
+				}	
+				ST.nwo[i] = 1;
 			}
+				
+
 		}else {
 			if(t>ti && t<tf && r.doub()<a) {
 				int i;
@@ -120,8 +138,8 @@ int main(int argc,char *argv[])
 
 
 	// write results
-	write_matrix(ST.nwe_activity,tmax,"Eactivity.csv");
-	write_matrix(ST.nwi_activity,tmax,"Iactivity.csv");
+	write_matrix(ST.nwe_activity,tmax,"Eactivityh.csv");
+	write_matrix(ST.nwi_activity,tmax,"Iactivityh.csv");
 
 	return 0;
 }

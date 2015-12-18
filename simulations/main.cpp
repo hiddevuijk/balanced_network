@@ -58,6 +58,11 @@ int main(int argc,char *argv[])
 	for(int i=0;i<NW.Ni;i++) NW.thi[i] = (theta_i + r.doub()*D)*sqK;
 
 	int inode =0;
+	ST.spike = vector<int> (tmax,0);
+	vector<double> Ein(tmax,0.0);
+	vector<double> Iin(tmax,0.0);	
+
+
 
 	// set up starting state of the network
 	State ST;
@@ -89,11 +94,22 @@ int main(int argc,char *argv[])
 		// advance network 1 time step
 		advanceNW(NW,ST,t,r);	
 		
+
+		// current in inode
+		Ein[t] = Jee*dotproduct(NW.EE[inode],NW.Ne,NW.Ne);
+		Ein[t] += Jeo*dotproduct(NW.EO[inode],NW.Ne,NW.No);
+		Iin[t] = Jei*dotproduct(NW.EI[inode],NW.Ne,NW.Ni);
 	}
 
 	// write results
-	write_matrix(ST.nwe_activity,tmax,"Eactivity.csv");
-	write_matrix(ST.nwi_activity,tmax,"Iactivity.csv");
+//	write_matrix(ST.nwe_activity,tmax,"Eactivity.csv");
+//	write_matrix(ST.nwi_activity,tmax,"Iactivity.csv");
+
+	write_matrix(Ein,tmax,"Ein.csv");
+	write_matrix(Iin,tmax,"Iin.csv");
+	ofstream inode_out("inode.csv");
+	inode_out << inode ;
+
 
 	return 0;
 }
