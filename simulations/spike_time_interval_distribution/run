@@ -1,0 +1,9 @@
+#!/bin/bash
+
+rm err_log.txt names.txt
+
+for seed in 333333333 444444444:
+do
+	./test $seed >> names.txt 2>> err_log.txt
+done
+
