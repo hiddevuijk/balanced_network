@@ -4,6 +4,13 @@ import sys
 from scipy.optimize import curve_fit
 from scipy.misc import factorial
 
+save = False
+name = ''
+if len(sys.argv) == 2:
+	name = sys.argv[1]
+	save = True
+
+
 bins = 10
 
 nm = open("names.txt",'r')
@@ -32,6 +39,9 @@ for i in range(n):
 	plt.plot(x,poisson(x,l))
 	plt.title(names[i])
 
-plt.show()
+if not save:
+	plt.show()
+else:
+	plt.savefig(name)
 
 
